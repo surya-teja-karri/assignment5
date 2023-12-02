@@ -76,5 +76,48 @@ for image in images:
 print(responses)
  
   return(response.json(),key)
+
+# Convert the array to JSON format
+json_data = json.dumps(responses, indent=2)  # indent for pretty printing, optional
+ 
+# Save JSON data to a file
+with open('data.json', 'w') as file:
+    file.write(json_data)
+ 
+# Function to encode the image
+def encode_image(image_path):
+  print(image_path)  
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+ 
+def form_and_table_understanding(image_path, prompt_text):
+  """ form_and_table_understanding """
+  base64_image = encode_image(image_path)  # Path to your image
+  headers = {"Content-Type": "application/json","Authorization": f"Bearer sk-"}
+  payload = {
+      "model": "gpt-4-vision-preview",
+      #"response_format" : { "type": "json_object" },
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": prompt_text
+            },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": f"data:image/jpeg;base64,{base64_image}"
+              }
+            }
+          ]
+        }
+      ],
+      "max_tokens": 300
+  }
+  response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+  return(response.json())
  
  
+
