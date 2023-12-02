@@ -44,6 +44,36 @@ def form_and_table_understanding(image_path, prompt_text,key):
       "max_tokens": 300
   }
   response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+for image in images:
+    key = image['Key']
+   
+    # Download image from S3
+    obj = s3.get_object(Bucket=bucket_name, Key=key)
+    image_bytes = obj['Body'].read()
+   
+    # Base64 encode image
+    base64_image = base64.b64encode(image_bytes).decode('utf-8')
+ 
+    prompt_text = "Generate 10 labels of this image  type_of_image : clothes,food ; gender:woman clothes or men ; sleves:shortorlong ; collar:with or without collar ; formal_informal : formal or casual ; colour:red ; age_group : 3 to 4 years,20 to 30 years ; brand_name : nokia,calvin klein ; other_info : more about image"
+ 
+   
+ 
+        # Call API
+    resp,key = form_and_table_understanding(base64_image, prompt_text, key)
+    print(key)
+    # Append response to array
+ 
+    element = {
+        'id': key,
+        'name of image': resp['choices'][0]['message']['content'],
+ 
+ 
+    }
+   
+   
+    responses.append(element)
+ 
+print(responses)
  
   return(response.json(),key)
  
