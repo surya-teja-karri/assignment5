@@ -167,4 +167,93 @@ def Image_Match():
 
     import streamlit as st
 
-    
+# Function to search for similar images using user's uploaded image
+
+    def search_similar_images(user_uploaded_image, image_style_embeddings, images, max_results=10):
+        user_image_tensor = load_image(user_uploaded_image)
+        user_style = style_to_vec(image_to_style(user_image_tensor))
+
+        distances = {}
+        for image_path, style_embedding in image_style_embeddings.items():
+            d = sc.spatial.distance.cosine(user_style, style_embedding)
+            distances[image_path] = d
+
+        sorted_neighbors = sorted(distances.items(), key=lambda x: x[1])
+
+        st.write("Most similar images:")
+        for i, (image_path, distance) in enumerate(sorted_neighbors[:max_results]):
+            st.image(images[image_path], caption=f"Distance: {distance}", use_column_width=True)
+
+    # Streamlit UI
+    st.title("Image Style Search")
+    st.write("Upload your image:")
+    user_image = st.file_uploader("", type=["jpg", "jpeg", "png"])
+    if user_image:
+        search_similar_images(user_image, image_style_embeddings, images)
+    pass
+
+def Image_Search_by_Text():
+    import streamlit as st
+    from serpapi import GoogleSearch
+    import openai
+
+    # Set up OpenAI API key
+    openai.api_key = ""  # Replace with your actual OpenAI API key
+
+    # Streamlit app
+    st.title("Query Exploration App")
+
+    # User input for query
+    user_query = st.text_input("Enter your query:")
+
+    # Function to generate explanation and answer using GPT-3
+    def generate_explanation_and_answer(query):
+        prompt = f"Explain and answer the following question:\n{query}"
+        response = openai.Completion.create(
+            engine="text-davinci-002",
+            prompt=prompt,
+            max_tokens=150
+        )
+        explanation_and_answer = response['choices'][0]['text']
+        return explanation_and_answer
+
+    # Function to search for similar images using SerpApi
+    def search_similar_images(query):
+        serpapi_key = ""  # Replace with your actual SerpApi key
+        params = {
+            "q": query,
+            "engine": "google_images",
+            "api_key": serpapi_key
+        }
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        images_results = results.get("images_results", [])
+        return images_results
+
+    # Main logic
+    if user_query:
+        # Use GPT-3 to generate explanation and answer
+        explanation_and_answer = generate_explanation_and_answer(user_query)
+
+        st.subheader("Explanation and Answer:")
+        st.write(explanation_and_answer)
+
+        # Image search using SerpApi
+        similar_images = search_similar_images(user_query)
+
+        if similar_images:
+            st.subheader("Similar Images:")
+            for i, image_data in enumerate(similar_images[:5]):  # Limit to the first 5 images
+                image_url = image_data["original"]
+                st.image(image_url, caption=f"Image {i + 1}", use_column_width=True)
+        else:
+            st.warning("No similar images found.")
+    pass
+
+# Run the selected app based on the user's choice
+if option == "Image Match":
+    Image_Match()
+elif option == "Image Search by Text":
+    Image_Search_by_Text()
+
+
